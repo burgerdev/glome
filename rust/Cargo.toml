@@ -1,0 +1,11 @@
+[package]
+name = "glome"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+sha2 = "0.9"
+getrandom = "0.2"
+rand_core = { version = "0.5", features = ["getrandom"] }
+x25519-dalek = "1.1"
+clap = "2.33"
