@@ -2,8 +2,6 @@ use clap::{App, SubCommand};
 use rand_core::OsRng;
 use x25519_dalek::{EphemeralSecret, StaticSecret, PublicKey};
 
-use sha2::{Sha256, Digest};
-
 use std::io::{self, Read, Write};
 
 fn genkey() -> io::Result<()> {
@@ -18,20 +16,18 @@ fn pubkey() -> io::Result<()> {
   io::stdout().write_all(&pubkey.to_bytes())
 }
 
-fn tag() -> io::Result<()> {
+fn gentag() -> io::Result<()> {
   // TODO: this is placeholder code
-  let alice_secret = EphemeralSecret::new(OsRng);
+  let alice_secret = StaticSecret::new(OsRng);
 
   let bob_secret = EphemeralSecret::new(OsRng);
   let bob_public = PublicKey::from(&bob_secret);
 
-  let sym_secret = alice_secret.diffie_hellman(&bob_public);
+  let mut msg: Vec<u8> = Vec::new();
+  io::stdin().read_to_end(&mut msg)?;
+  let t = glome::tag(&alice_secret, &bob_public, 0, &msg);
 
-  let mut hasher = Sha256::new();
-  hasher.update(&sym_secret.to_bytes());
-  let digest = hasher.finalize();
-
-  io::stdout().write_all(&digest)
+  io::stdout().write_all(&t)
 }
 
 fn main() -> io::Result<()> {
@@ -46,7 +42,7 @@ fn main() -> io::Result<()> {
   match matches.subcommand_name() {
       Some("genkey") => genkey()?,
       Some("pubkey") => pubkey()?,
-      Some("tag") => tag()?,
+      Some("tag") => gentag()?,
       _ => println!("other subcommand"),
   }
   Ok(())
