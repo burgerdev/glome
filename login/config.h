@@ -17,6 +17,12 @@
 
 #include "crypto.h"
 
+typedef struct glome_public_key {
+  uint8_t key[PUBLIC_KEY_LENGTH];
+  int service_key_id;
+  char url_prefix[512];
+} glome_public_key_t;
+
 typedef struct glome_login_config {
   // Bitfield of options as described above.
   uint8_t options;
@@ -30,9 +36,6 @@ typedef struct glome_login_config {
   // Login binary for fallback authentication.
   const char* login_path;
 
-  // URL prefix to use for HTTP service.
-  const char* url_prefix;
-
   // Delay to wait before confirming if the authentication code is valid
   // or not, to stop brute forcing; in seconds.
   unsigned int auth_delay_sec;
@@ -40,11 +43,8 @@ typedef struct glome_login_config {
   // How long to wait for authentication code input in seconds.
   unsigned int input_timeout_sec;
 
-  // Service key of the remote peer.
-  uint8_t service_key[PUBLIC_KEY_LENGTH];
-
-  // ID of the service key of the remote peer. (Optional)
-  uint8_t service_key_id;
+  // Public keys of the servers.
+  glome_public_key_t** server_keys;
 
   // Local ephemeral secret key.
   uint8_t secret_key[PRIVATE_KEY_LENGTH];
@@ -57,6 +57,7 @@ typedef struct glome_login_config {
 // given config struct with the data. The default config file is used in case
 // no explicit config file has been provided, however in this case failed
 // attempts to read the default config file will be ignored.
+// TODO: why does this function need to implement such complex logic?
 int glome_login_parse_config_file(glome_login_config_t* config);
 
 #endif  // GLOME_LOGIN_CONFIG_H_

@@ -314,8 +314,10 @@ int login_run(glome_login_config_t* config, const char** error_tag) {
   free(action);
   action = NULL;
 
-  printf("Obtain the one-time authorization code from:\n%s%s\n",
-         config->url_prefix, url);
+  // TODO: prompt for multiple keys
+  //
+  // printf("Obtain the one-time authorization code from:\n%s%s\n",
+  //        config->url_prefix, url);
 
   free(url);
   url = NULL;
