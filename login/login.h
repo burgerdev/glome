@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LOGIN_H_
-#define LOGIN_H_
+#ifndef LOGIN_LOGIN_H_
+#define LOGIN_LOGIN_H_
 
 #include <glome.h>
 
@@ -57,20 +57,21 @@ int login_run(glome_login_config_t* config, const char** error_tag);
 int shell_action(const char* user, char** action, size_t* action_len,
                  const char** error_tag);
 
-// Construct a request URL given the key parameters, host ID, an action, and
+// Construct a challenge given the key parameters, host ID, an action, and
 // optionally a message prefix tag.
 //
 // The length of the message prefix tag is in bytes. Only tag sizes of multiples
 // by 8 is supported.
 //
-// Caller is expected to free returned URL.
+// Caller is expected to free returned challenge.
 // On error, the error_tag is set to an error token which should NOT be freed.
-int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
-                int service_key_id, const uint8_t public_key[PUBLIC_KEY_LENGTH],
-                const char* host_id, const char* action,
-                const uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH],
-                size_t prefix_tag_len, char** url, int* url_len,
-                const char** error_tag);
+int request_challenge(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
+                      int service_key_id,
+                      const uint8_t public_key[PUBLIC_KEY_LENGTH],
+                      const char* host_id, const char* action,
+                      const uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH],
+                      size_t prefix_tag_len, char** challenge,
+                      int* challenge_len, const char** error_tag);
 
 // Set the error_tag to the given error token and return the error code.
 int failure(int code, const char** error_tag, const char* message);
@@ -79,4 +80,19 @@ int failure(int code, const char** error_tag, const char* message);
 // On error, the error_tag is set to an error token which should NOT be freed.
 int get_machine_id(char* buf, size_t buflen, const char** error_tag);
 
-#endif  // LOGIN_H_
+// Helper operations used by the GLOME login authentication.
+struct pam_handle;
+typedef struct pam_handle pam_handle_t;
+void login_error(glome_login_config_t* config, pam_handle_t* pamh,
+                 const char* format, ...);
+void login_syslog(glome_login_config_t* config, pam_handle_t* pamh,
+                  int priority, const char* format, ...);
+int login_prompt(glome_login_config_t* config, pam_handle_t* pamh,
+                 const char** error_tag, const char* message, char* input,
+                 size_t input_size);
+
+// Execute GLOME login authentication for login and PAM binaries.
+int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
+                       const char** error_tag);
+
+#endif  // LOGIN_LOGIN_H_
