@@ -1,19 +1,23 @@
 [package]
 name = "glome"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-sha2 = "0.9"
+sha2 = "0.10"
+hmac = "0.12"
+x25519-dalek = "1"
+
+[dev-dependencies]
+# test
+hex-literal = "0.3"
+# cli example
 getrandom = "0.2"
+# Newer version is not compatible with Dalek, see
+# https://stackoverflow.com/a/65562908/6144653.
 rand_core = { version = "0.5", features = ["getrandom"] }
-x25519-dalek = "1.1"
 clap = "2.33"
 
 [lib]
 name = "glome"
 path = "src/lib.rs"
-
-[[bin]]
-name = "glome-cli"
-path = "src/bin/glome-cli.rs"
