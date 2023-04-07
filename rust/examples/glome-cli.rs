@@ -1,49 +1,77 @@
-use clap::{App, SubCommand};
-use rand_core::OsRng;
-use x25519_dalek::{EphemeralSecret, StaticSecret, PublicKey};
-
+use base64::{engine::general_purpose, Engine as _};
+use clap::{Args, Parser, Subcommand};
+use ed25519_compact::x25519::{KeyPair, PublicKey, SecretKey};
+use std::convert::TryInto;
+use std::fs;
 use std::io::{self, Read, Write};
+use std::path::PathBuf;
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Glome,
+}
+
+#[derive(Args)]
+struct TagArgs {
+    /// Path to secret key
+    #[arg(long, value_name = "FILE")]
+    key: PathBuf,
+    /// Path to peer's public key
+    #[arg(long, value_name = "FILE")]
+    peer: PathBuf,
+}
+
+#[derive(Subcommand)]
+enum Glome {
+    /// Generate a new secret key and print it to stdout
+    Genkey,
+    /// Read a private key from stdin and write its public key to stdout
+    Pubkey,
+    /// Tag a message read from stdin
+    Tag(TagArgs),
+}
 
 fn genkey() -> io::Result<()> {
-  io::stdout().write_all(&StaticSecret::new(OsRng).to_bytes())
+    let a = KeyPair::generate();
+    io::stdout().write_all(&a.sk.as_slice())
 }
 
 fn pubkey() -> io::Result<()> {
-  let mut buf: [u8; 32] = [0; 32];
-  io::stdin().read_exact(&mut buf)?;
-  let key = StaticSecret::from(buf);
-  let pubkey = PublicKey::from(&key);
-  io::stdout().write_all(&pubkey.to_bytes())
+    let mut buf: [u8; 32] = [0; 32];
+    io::stdin().read_exact(&mut buf)?;
+    let sk = SecretKey::new(buf);
+    let pk = sk
+        .recover_public_key()
+        .expect("secret key should not be weak");
+    io::stdout().write_all(&pk.as_slice())
 }
 
-fn gentag() -> io::Result<()> {
-  // TODO: this is placeholder code
-  let alice_secret = StaticSecret::new(OsRng);
+fn read_key(path: &PathBuf) -> [u8; 32] {
+    let b: Box<[u8; 32]> = fs::read(path)
+        .expect(format!("file {:?} should be readable", path).as_str())
+        .into_boxed_slice()
+        .try_into()
+        .expect(format!("file {:?} should contain exactly 32 bytes", path).as_str());
+    *b
+}
 
-  let bob_secret = EphemeralSecret::new(OsRng);
-  let bob_public = PublicKey::from(&bob_secret);
+fn gentag(args: &TagArgs) -> io::Result<()> {
+    let sk = SecretKey::new(read_key(&args.key));
+    let pk = PublicKey::new(read_key(&args.peer));
 
-  let mut msg: Vec<u8> = Vec::new();
-  io::stdin().read_to_end(&mut msg)?;
-  let t = glome::tag(&alice_secret, &bob_public, 0, &msg);
+    let t = glome::tag(&sk, &pk, 0 /* TODO */, b"" /* TODO */);
 
-  io::stdout().write_all(&t)
+    let encoded = general_purpose::URL_SAFE.encode(&t.expect("tagging should have worked"));
+
+    io::stdout().write_all(encoded.as_bytes())
 }
 
 fn main() -> io::Result<()> {
-
-  let matches = App::new("glome")
-      .subcommand(SubCommand::with_name("genkey"))
-      .subcommand(SubCommand::with_name("pubkey"))
-      .subcommand(SubCommand::with_name("tag"))
-      .get_matches();
-
-
-  match matches.subcommand_name() {
-      Some("genkey") => genkey()?,
-      Some("pubkey") => pubkey()?,
-      Some("tag") => gentag()?,
-      _ => println!("other subcommand"),
-  }
-  Ok(())
+    match &Cli::parse().command {
+        Glome::Genkey => genkey(),
+        Glome::Pubkey => pubkey(),
+        Glome::Tag(tag_args) => gentag(tag_args),
+    }
 }
