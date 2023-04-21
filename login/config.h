@@ -40,6 +40,9 @@ typedef struct glome_login_config {
   // How long to wait for authentication code input in seconds.
   unsigned int input_timeout_sec;
 
+  // Minimum required length of the encoded authentication code.
+  unsigned int min_authcode_len;
+
   // Service key of the remote peer.
   uint8_t service_key[PUBLIC_KEY_LENGTH];
 
@@ -51,6 +54,9 @@ typedef struct glome_login_config {
 
   // Explicitly set host-id to use in the login request.
   const char* host_id;
+
+  // Type of host-id to use in the login request.
+  const char* host_id_type;
 } glome_login_config_t;
 
 #define GLOME_LOGIN_PUBLIC_KEY_ID "glome-v1"
