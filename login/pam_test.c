@@ -83,10 +83,11 @@ int test_service() {
           "auth required %s prompt=https://test.service/ "
           "key="
           "de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f "
-          "key_version=1 "
-          "ephemeral_key="
+          "key-version=1 "
+          "ephemeral-key="
           "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a "
-          "host_id=my-server.local",
+          "host-id=my-server.local "
+          "debug",
           pam_glome);
   fclose(f);
 
@@ -167,7 +168,8 @@ int test_config() {
           "auth required %s config_path=%s "
           "ephemeral-key="
           "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a "
-          "host-id=my-server.local",
+          "host-id=my-server.local "
+          "debug",
           pam_glome, config_file);
   fclose(f);
   free(config_file);
