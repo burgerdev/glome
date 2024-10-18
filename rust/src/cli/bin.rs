@@ -51,13 +51,13 @@ fn genkey() -> io::Result<()> {
     io::stdout().write_all(StaticSecret::random().as_bytes())
 }
 
-// TODO(burgerdev): this is the pre-0.1.0 way of writing public keys!
 fn pubkey() -> io::Result<()> {
     let mut buf: [u8; 32] = [0; 32];
     io::stdin().read_exact(&mut buf)?;
     let sk: StaticSecret = buf.into();
     let pk: PublicKey = (&sk).into();
-    io::stdout().write_all(pk.as_bytes())
+
+    write!(io::stdout(), "glome-v1 {}\n", general_purpose::URL_SAFE.encode(pk.as_bytes()))
 }
 
 fn read_key(path: &PathBuf) -> [u8; 32] {
@@ -69,9 +69,19 @@ fn read_key(path: &PathBuf) -> [u8; 32] {
     *b
 }
 
+fn read_pub(path: &PathBuf) -> [u8; 32] {
+    let pubkey = fs::read_to_string(path).expect(format!("file {:?} should be readable", path).as_str());
+    let b64 = pubkey.strip_prefix("glome-v1 ").expect("unsupported public key version, expected 'glome-v1'").trim_end();
+    let raw: Box<[u8; 32]> = general_purpose::URL_SAFE.decode(b64).expect("corrupt base64 encoding")
+        .into_boxed_slice()
+        .try_into()
+        .expect(format!("file {:?} should contain exactly 32 bytes", path).as_str());
+    *raw
+}
+
 fn gentag(args: &TagArgs) -> io::Result<()> {
     let ours: StaticSecret = read_key(&args.key).into();
-    let theirs: PublicKey = read_key(&args.peer).into();
+    let theirs: PublicKey = read_pub(&args.peer).into();
     let ctr = args.counter.unwrap_or_default();
     let mut msg = Vec::new();
     io::stdin().read_to_end(&mut msg)?;
